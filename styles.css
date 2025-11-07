@@ -31,6 +31,27 @@ If your plugin does not need CSS, delete this file.
     border-color: var(--interactive-accent)!important;
     box-shadow: 0 0 0 2px var(--interactive-accent)!important;
 }
+
+/* 输入框错误态：边框标红 */
+.sd-modal-input.error {
+    border-color: var(--text-error, #d43c3c) !important;
+    box-shadow: 0 0 0 2px rgba(212, 60, 60, 0.3) !important;
+}
+.sd-modal-input.error:focus {
+    border-color: var(--text-error, #d43c3c) !important;
+    box-shadow: 0 0 0 2px rgba(212, 60, 60, 0.3) !important;
+}
+
+/* 输入提示区域 */
+.sd-modal-hint {
+    margin-top: 8px;
+    min-height: 20px;
+    font-size: 14px;
+    color: var(--text-muted);
+}
+.sd-modal-hint.error {
+    color: var(--text-error, #d43c3c);
+}
 .sd-modal-cancel-btn{
     padding: 0 20px;
     height: 40px;

@@ -3,15 +3,19 @@ import { Modal, App, Notice } from 'obsidian';
 export class PromptModal extends Modal {
   private input: HTMLInputElement;
   private resolve: (value: string | null) => void;
+  private hintEl: HTMLDivElement;
+  private validate?: (value: string) => string | null;
 
   constructor(
     app: App,
     private message: string,
     private defaultValue: string,
-    resolve: (value: string | null) => void
+    resolve: (value: string | null) => void,
+    validate?: (value: string) => string | null
   ) {
     super(app);
     this.resolve = resolve;
+    this.validate = validate;
   }
 
   onOpen() {
@@ -24,6 +28,22 @@ export class PromptModal extends Modal {
     const contentContainer = contentEl.createDiv({cls:'sd-modal-content-container'});
     
     this.input = contentContainer.createEl('input',{type:'text',value:this.defaultValue,cls:'sd-modal-input'});
+    // 提示文字容器（用于展示校验提示，如重名）
+    this.hintEl = contentContainer.createDiv({cls:'sd-modal-hint'});
+    const updateHint = () => {
+      const msg = this.validate ? this.validate(this.input.value.trim()) : null;
+      this.hintEl.setText(msg ?? '');
+      if (msg) {
+        this.hintEl.addClass('error');
+        this.input.addClass('error');
+      } else {
+        this.hintEl.removeClass('error');
+        this.input.removeClass('error');
+      }
+    };
+    this.input.addEventListener('input', updateHint);
+    // 初始更新一次提示
+    updateHint();
     this.input.addEventListener('keydown', (event) => {
         if (event.key === 'Enter') {
             event.preventDefault();
@@ -54,6 +74,16 @@ export class PromptModal extends Modal {
     if (!value) {
       new Notice('输入不能为空');
       return;
+    }
+    if (this.validate) {
+      const msg = this.validate(value);
+      if (msg) {
+        // 在输入框下方提示，并阻止提交
+        this.hintEl.setText(msg);
+        this.hintEl.addClass('error');
+        this.input.addClass('error');
+        return;
+      }
     }
     this.resolve(value);
     this.close();

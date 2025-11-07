@@ -124,7 +124,17 @@ export default class WorkflowPlugin extends Plugin {
                         item.setTitle('创建关联项目')
                             .setIcon(AddProjectIcon)
                             .onClick(async () => {
-                                const projectName = await this.promptUser('请输入项目名称');
+                                const projectName = await this.promptUser('请输入项目名称', '', (name: string) => {
+                                    if (!name) return '项目名称不能为空';
+                                    const folderPath = `${this.settings.projectFolder}/${name}`;
+                                    const indexFilePath = `${folderPath}/${name}-index.md`;
+                                    const folderExists = !!this.app.vault.getAbstractFileByPath(folderPath);
+                                    const fileExists = !!this.app.vault.getAbstractFileByPath(indexFilePath);
+                                    if (folderExists || fileExists) {
+                                        return '已存在同名项目（或索引文件），请更换名称';
+                                    }
+                                    return null;
+                                });
                                 if (projectName) {
                                     this.createProjectNote(projectName, file);
                                 }
@@ -307,12 +317,15 @@ export default class WorkflowPlugin extends Plugin {
         const day = String(date.getDate()).padStart(2, '0');
         const weekNumber = this.dateUtils.getWeekNumber(date);
         const weekday = this.dateUtils.getWeekdayName(date);
-        const prevDate = this.dateUtils.getPreviousDate(date);
-        const prevDateStr = this.dateUtils.getFormattedDate(prevDate);
-        const prevDailyNotePath = `${this.settings.dailyFolder}/${prevDateStr}.md`;
-        const  { work, personal }  = await this.fileManager.getIncompleteTasksByType(prevDailyNotePath);
-        console.log('incomplete_work',work);
-        console.log('incomplete_personal',personal);
+        // 查找最近一天（非今日）的日记文件，并提取未完成任务与记录（保持原顺序）
+        const latestDailyFile = await this.fileManager.getLatestDailyFileBefore(date);
+        let workContent: string[] = [];
+        let personalContent: string[] = [];
+        if (latestDailyFile) {
+            const parsed = await this.fileManager.getSectionContentByType(latestDailyFile.path);
+            workContent = parsed.work;
+            personalContent = parsed.personal;
+        }
         // 生成文件名
         const fileName = `${year}-${month}-${day}_${weekday}.md`;
         const filePath = `${this.settings.dailyFolder}/${fileName}`;
@@ -324,17 +337,10 @@ export default class WorkflowPlugin extends Plugin {
                          .replace(/{{date_month}}/g, `${month}`)
                          .replace(/{{week}}/g, `${weekNumber}`)
                          .replace(/{{weekday}}/g, `${weekday}`);
-        // 将未完成的任务添加到内容中
-        if (work.length > 0) {
-            content = content.replace('{{incomplete_work}}', work.join('\n'));
-        } else {
-            content = content.replace('{{incomplete_work}}', '');
-        }
-        if (personal.length > 0) {
-            content = content.replace('{{incomplete_personal}}', personal.join('\n'));
-        } else {
-            content = content.replace('{{incomplete_personal}}', '');
-        }
+        // 将内容添加到模板中（保持原顺序）
+        const buildSection = (lines: string[]) => lines.join('\n');
+        content = content.replace('{{incomplete_work}}', buildSection(workContent));
+        content = content.replace('{{incomplete_personal}}', buildSection(personalContent));
         // 创建文件
         const file = await this.app.vault.create(filePath, content);
         
@@ -395,7 +401,17 @@ export default class WorkflowPlugin extends Plugin {
     // 创建项目笔记
     async createProjectNote(projectName?: string|null, relatedFile?: TFile) {
         if (!projectName) {
-            projectName = await this.promptUser('请输入项目名称');
+            projectName = await this.promptUser('请输入项目名称', '', (name: string) => {
+                if (!name) return '项目名称不能为空';
+                const folderPath = `${this.settings.projectFolder}/${name}`;
+                const indexFilePath = `${folderPath}/${name}-index.md`;
+                const folderExists = !!this.app.vault.getAbstractFileByPath(folderPath);
+                const fileExists = !!this.app.vault.getAbstractFileByPath(indexFilePath);
+                if (folderExists || fileExists) {
+                    return '已存在同名项目（或索引文件），请更换名称';
+                }
+                return null;
+            });
             if (!projectName) return;
         }
         
@@ -463,7 +479,7 @@ export default class WorkflowPlugin extends Plugin {
         // 如果有相关文件，添加引用
         console.log('relatedFile',relatedFile);
         if (relatedFile) {
-            //取出双引号
+            //剔除双引号
             const relatedLink = this.fileManager.generateObsLink(relatedFile);
             content = content.replace(/{{relatedFile}}/g, relatedLink);
         }else{
@@ -535,9 +551,9 @@ export default class WorkflowPlugin extends Plugin {
     }
 
     // 提示用户输入
-    async promptUser(message: string, defaultValue = ''): Promise<string | null > {
+    async promptUser(message: string, defaultValue = '', validate?: (value: string) => string | null): Promise<string | null > {
         return new Promise(resolve => {
-            const promptModal = new PromptModal(this.app, message, defaultValue, resolve);
+            const promptModal = new PromptModal(this.app, message, defaultValue, resolve, validate);
             promptModal.open();
         });
     }
