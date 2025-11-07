@@ -17,7 +17,6 @@ export default class WorkflowPlugin extends Plugin {
     private contextMenuListener: (menu: Menu, file: TFile) => void; // 保存文件选择事件监听器引用
     private editorMenuListener:(menu: Menu, editor: Editor, view: MarkdownView) => void;// 保存文件编辑事件监听器引用
     async onload() {
-        console.log('loading workflow plugin');
         // 初始化管理类
         this.settingsManager = new SettingsManager(this);
         this.settings = await this.settingsManager.loadSettings();
@@ -34,15 +33,12 @@ export default class WorkflowPlugin extends Plugin {
         if (this.settings.autoCreate) {
             this.checkAndCreateDailyNote();
         }
-        console.log('workflow plugin loaded');
     }
 
     onunload() {
         if (this.contextMenuListener) {
-            console.log('onunload:remove contextMenuListener')
             this.app.workspace.off('file-menu', this.contextMenuListener);
         }
-        console.log('unloading workflow plugin');
     }
     // 初始化命令
     initCommands() {
@@ -231,7 +227,6 @@ export default class WorkflowPlugin extends Plugin {
                     event.stopPropagation();
                     
                     // 阻止默认行为（防止选中目录被取消）
-                    // console.log("!target.classList.contains('is-active')",!target.classList.contains('is-active'))
                     // if (!target.classList.contains('is-active')){
                     //     event.preventDefault();
                     //     event.stopPropagation();
@@ -485,7 +480,6 @@ export default class WorkflowPlugin extends Plugin {
                          .replace(/{{meeting_name}}/g, `${meetingName}`);
         
         // 如果有相关文件，添加引用
-        console.log('relatedFile',relatedFile);
         if (!relatedFile && selectedProject) {
             relatedFile = this.fileManager.findProjectIndexFile(selectedProject) || undefined;
         }
@@ -555,12 +549,8 @@ export default class WorkflowPlugin extends Plugin {
         
         // 生成任务内容（包含文件链接和标题）
         // const fileLink = this.fileManager.generateObsLink(file); // 生成 [[文件路径]] 格式
-        console.log("this.app.metadataCache.fileToLinktext",this.app.metadataCache.fileToLinktext(file,""))
         const fileLinkName = this.app.metadataCache.fileToLinktext(file,"")
         const fileLink=`[[`+fileLinkName+title+`]]`
-        console.log('fileLinkName',fileLinkName);
-        console.log('fileLink',fileLink);
-        console.log('title',title);
         const taskContent = `- ${fileLink}`;
         
         // 读取并修改周记内容（追加到“主要任务”部分）

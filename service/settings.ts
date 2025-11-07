@@ -105,10 +105,7 @@ export class SettingsManager {
     }
     
     async resetToDefaults(): Promise<void> {
-      // console.log('settings.resetToDefaults');
       this.plugin.settings = {...DEFAULT_SETTINGS}; // 现在 TypeScript 知道 settings 属性存在
       await this.plugin.saveData(this.plugin.settings);
-      console.log('settings.resetToDefaults done');
-      // console.log('plugin.settings', this.plugin.settings);
     }
 }

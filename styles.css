@@ -104,6 +104,9 @@ If your plugin does not need CSS, delete this file.
     cursor: pointer;
     z-index: 2; /* 保证在下拉上层可点击 */
 }
+.sd-modal-select-clear-btn.hidden {
+    visibility: hidden;
+}
 .sd-modal-select-clear-btn:hover {
     color: var(--interactive-accent);
 }

@@ -128,18 +128,17 @@ export class MeetingModal extends Modal {
     });
     // 默认不选中任何项目
     this.projectSelect.selectedIndex = -1;
-    const clearBtn = selectRow.createEl('button', { text: '✕', cls: 'sd-modal-select-clear-btn' });
+    const clearBtn = selectRow.createEl('button', { text: '✕', cls: 'sd-modal-select-clear-btn hidden' });
     clearBtn.setAttr('title', '清除选择');
-    clearBtn.style.visibility = 'hidden';
     clearBtn.onclick = () => {
       this.projectSelect.selectedIndex = -1;
-      clearBtn.style.visibility = 'hidden';
+      clearBtn.addClass('hidden');
     };
     this.projectSelect.addEventListener('change', () => {
       if (this.projectSelect.selectedIndex >= 0) {
-        clearBtn.style.visibility = 'visible';
+        clearBtn.removeClass('hidden');
       } else {
-        clearBtn.style.visibility = 'hidden';
+        clearBtn.addClass('hidden');
       }
     });
 
