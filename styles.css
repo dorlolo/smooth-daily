@@ -31,27 +31,6 @@ If your plugin does not need CSS, delete this file.
     border-color: var(--interactive-accent)!important;
     box-shadow: 0 0 0 2px var(--interactive-accent)!important;
 }
-
-/* 输入框错误态：边框标红 */
-.sd-modal-input.error {
-    border-color: var(--text-error, #d43c3c) !important;
-    box-shadow: 0 0 0 2px rgba(212, 60, 60, 0.3) !important;
-}
-.sd-modal-input.error:focus {
-    border-color: var(--text-error, #d43c3c) !important;
-    box-shadow: 0 0 0 2px rgba(212, 60, 60, 0.3) !important;
-}
-
-/* 输入提示区域 */
-.sd-modal-hint {
-    margin-top: 8px;
-    min-height: 20px;
-    font-size: 14px;
-    color: var(--text-muted);
-}
-.sd-modal-hint.error {
-    color: var(--text-error, #d43c3c);
-}
 .sd-modal-cancel-btn{
     padding: 0 20px;
     height: 40px;
@@ -94,4 +73,37 @@ If your plugin does not need CSS, delete this file.
 .sd-modal-confirm-btn:hover{
     background-color: var(--interactive-accent);
     transform: scale(1.05);
+}
+
+/* MeetingModal: project select UI */
+.sd-modal-select-label {
+    margin-top: 12px;
+    margin-bottom: 10px; /* label 与下拉菜单间距 */
+}
+.sd-modal-select-row {
+    position: relative;
+    width: 100%; /* 充满容器，避免叉号超出 */
+}
+.sd-modal-select {
+    width: 100%;
+    height: 40px;
+    font-size: 18px !important; /* 下拉菜单字体更大 */
+}
+.sd-modal-select-clear-btn {
+    position: absolute;
+    right: 8px; /* 放在下拉框内部靠右侧 */
+    top: 50%;
+    transform: translateY(-50%);
+    width: 26px; /* 叉号更大一些 */
+    height: 26px;
+    border: none !important; /* 去掉边框 */
+    outline: none; /* 去掉默认描边 */
+    background: transparent;
+    color: var(--text-muted);
+    font-size: 18px; /* 叉号字体更大 */
+    cursor: pointer;
+    z-index: 2; /* 保证在下拉上层可点击 */
+}
+.sd-modal-select-clear-btn:hover {
+    color: var(--interactive-accent);
 }

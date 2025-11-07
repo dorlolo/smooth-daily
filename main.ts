@@ -1,8 +1,8 @@
-import { Plugin, TFile,Menu,MarkdownView,Editor } from 'obsidian';
+import { Plugin, TFile,Menu,MarkdownView,Editor,Notice } from 'obsidian';
 import { WorkflowPluginSettings, SettingsManager } from './service/settings';
 import { FileManager } from './utils/fileManager';
 import { DateUtils } from './utils/dateUtils';
-import { PromptModal } from './utils/modal';
+import { PromptModal, MeetingModal } from './utils/modal';
 import { WorkflowSettingTab } from './service/settingTab';
 const AddProjectIcon ="target";
 const AddMettingIcon ="microphone";
@@ -450,9 +450,17 @@ export default class WorkflowPlugin extends Plugin {
 
     // 创建会议记录
     async createMeetingNote(meetingName?: string|null, relatedFile?: TFile) {
+        let selectedProject: string | null = null;
         if (!meetingName) {
-            meetingName = await this.promptUser('请输入会议名称');
-            if (!meetingName) return;
+            // 弹出会议记录创建弹窗（包含项目选择）
+            const projects = (await this.fileManager.listProjects()).map(p => p.name);
+            const modalResult = await new Promise<{ name: string; project: string | null } | null>(resolve => {
+                const modal = new MeetingModal(this.app, projects, resolve);
+                modal.open();
+            });
+            if (!modalResult) return;
+            meetingName = modalResult.name;
+            selectedProject = modalResult.project;
         }
         
         // 创建文件夹（如果不存在）
@@ -478,6 +486,9 @@ export default class WorkflowPlugin extends Plugin {
         
         // 如果有相关文件，添加引用
         console.log('relatedFile',relatedFile);
+        if (!relatedFile && selectedProject) {
+            relatedFile = this.fileManager.findProjectIndexFile(selectedProject) || undefined;
+        }
         if (relatedFile) {
             //剔除双引号
             const relatedLink = this.fileManager.generateObsLink(relatedFile);
@@ -491,7 +502,19 @@ export default class WorkflowPlugin extends Plugin {
         
         // 打开文件
         await this.fileManager.openFile(file);
-        
+
+        // 若选择了项目，则在项目索引文件的“会议记录”标题下添加链接（不存在标题则追加到末尾）
+        if (selectedProject) {
+            const projectIndex = this.fileManager.findProjectIndexFile(selectedProject);
+            if (projectIndex) {
+                const linkText = this.app.metadataCache.fileToLinktext(file, '');
+                const linkLine = `- [[${linkText}]]`;
+                await this.fileManager.appendLineUnderHeading(projectIndex, '## 会议记录', linkLine);
+            } else {
+                new Notice(`未找到项目“${selectedProject}”的索引文件，已跳过追加会议链接。`);
+            }
+        }
+
         return file;
     }
 

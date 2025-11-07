@@ -42,6 +42,48 @@ export class FileManager {
             return null;
         }
     }
+
+    // 列出项目名称与索引文件
+    async listProjects(): Promise<{ name: string; indexFile: TFile | null }[]> {
+        try {
+            const folder = this.app.vault.getAbstractFileByPath(this.settings.projectFolder);
+            if (!folder || !(folder instanceof TFolder)) return [];
+            const subfolders = folder.children.filter((f): f is TFolder => f instanceof TFolder);
+            const projects = subfolders.map(sf => {
+                const name = sf.name;
+                const indexPath = `${this.settings.projectFolder}/${name}/${name}-index.md`;
+                const index = this.app.vault.getAbstractFileByPath(indexPath);
+                return { name, indexFile: index instanceof TFile ? index : null };
+            });
+            return projects;
+        } catch (error) {
+            console.error('列出项目时出错:', error);
+            return [];
+        }
+    }
+
+    // 按项目名查找索引文件
+    findProjectIndexFile(name: string): TFile | null {
+        const indexPath = `${this.settings.projectFolder}/${name}/${name}-index.md`;
+        const index = this.app.vault.getAbstractFileByPath(indexPath);
+        return index instanceof TFile ? index : null;
+    }
+
+    // 在指定标题下追加一行，若标题不存在则追加到末尾
+    async appendLineUnderHeading(file: TFile, heading: string, line: string): Promise<void> {
+        const content = await this.app.vault.read(file);
+        const lines = content.split('\n');
+        const headingIndex = lines.findIndex(l => l.trim() === heading.trim());
+        if (headingIndex >= 0) {
+            // 插入到标题之后一行
+            lines.splice(headingIndex + 1, 0, line);
+            const updated = lines.join('\n');
+            await this.app.vault.modify(file, updated);
+        } else {
+            const updated = `${content}\n${line}`;
+            await this.app.vault.modify(file, updated);
+        }
+    }
     // 解析文件中未完成的任务
     async getIncompleteTasks(filePath: string): Promise<string[]> {
         try {

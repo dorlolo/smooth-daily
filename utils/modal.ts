@@ -91,6 +91,84 @@ export class PromptModal extends Modal {
 }
 
 
+export class MeetingModal extends Modal {
+  private nameInput: HTMLInputElement;
+  private projectSelect: HTMLSelectElement;
+  private resolve: (value: { name: string; project: string | null } | null) => void;
+  private hintEl: HTMLDivElement;
+
+  constructor(
+    app: App,
+    private projects: string[],
+    resolve: (value: { name: string; project: string | null } | null) => void
+  ) {
+    super(app);
+    this.resolve = resolve;
+  }
+
+  onOpen() {
+    const { contentEl, titleEl } = this;
+    titleEl.setText('创建会议记录');
+    contentEl.empty();
+
+    const container = contentEl.createDiv({ cls: 'sd-modal-content-container' });
+
+    // 会议名称
+    this.nameInput = container.createEl('input', { type: 'text', cls: 'sd-modal-input' });
+    this.nameInput.placeholder = '请输入会议名称';
+    this.hintEl = container.createDiv({ cls: 'sd-modal-hint' });
+
+    // 项目选择（可为空，提供清除按钮）
+    const selectLabel = container.createDiv({ cls: 'sd-modal-select-label' });
+    selectLabel.setText('关联项目（可留空）：');
+    const selectRow = container.createDiv({ cls: 'sd-modal-select-row' });
+    this.projectSelect = selectRow.createEl('select', { cls: 'sd-modal-select' });
+    this.projects.forEach(p => {
+      this.projectSelect.createEl('option', { text: p, value: p });
+    });
+    // 默认不选中任何项目
+    this.projectSelect.selectedIndex = -1;
+    const clearBtn = selectRow.createEl('button', { text: '✕', cls: 'sd-modal-select-clear-btn' });
+    clearBtn.setAttr('title', '清除选择');
+    clearBtn.style.visibility = 'hidden';
+    clearBtn.onclick = () => {
+      this.projectSelect.selectedIndex = -1;
+      clearBtn.style.visibility = 'hidden';
+    };
+    this.projectSelect.addEventListener('change', () => {
+      if (this.projectSelect.selectedIndex >= 0) {
+        clearBtn.style.visibility = 'visible';
+      } else {
+        clearBtn.style.visibility = 'hidden';
+      }
+    });
+
+    const footer = contentEl.createDiv({ cls: 'sd-modal-footer-container' });
+    const cancelBtn = footer.createEl('button', { text: '取消', cls: 'sd-modal-cancel-btn' });
+    cancelBtn.onclick = () => { this.resolve(null); this.close(); };
+    const confirmBtn = footer.createEl('button', { text: '确定', cls: 'sd-modal-confirm-btn' });
+    confirmBtn.onclick = () => this.submit();
+
+    this.nameInput.addEventListener('keydown', (ev) => {
+      if (ev.key === 'Enter') { ev.preventDefault(); this.submit(); }
+    });
+    this.nameInput.focus();
+  }
+
+  private submit() {
+    const name = this.nameInput.value.trim();
+    if (!name) {
+      this.hintEl.setText('会议名称不能为空');
+      this.hintEl.addClass('error');
+      this.nameInput.addClass('error');
+      return;
+    }
+    const project = this.projectSelect && this.projectSelect.selectedIndex >= 0 ? this.projectSelect.value : null;
+    this.resolve({ name, project });
+    this.close();
+  }
+}
+
 export class ConfirmModal extends Modal {
   constructor(app: App, private onConfirm: () => void) {
       super(app);
