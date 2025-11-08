@@ -19,7 +19,7 @@ export class FileManager {
     }
     
     // 查找当前日期之前最近的日记文件
-    async getLatestDailyFileBefore(date: Date): Promise<TFile | null> {
+    getLatestDailyFileBefore(date: Date): TFile | null {
         try {
             const folder = this.app.vault.getAbstractFileByPath(this.settings.dailyFolder);
             if (!folder || !(folder instanceof TFolder)) {
@@ -44,7 +44,7 @@ export class FileManager {
     }
 
     // 列出项目名称与索引文件
-    async listProjects(): Promise<{ name: string; indexFile: TFile | null }[]> {
+    listProjects(): { name: string; indexFile: TFile | null }[] {
         try {
             const folder = this.app.vault.getAbstractFileByPath(this.settings.projectFolder);
             if (!folder || !(folder instanceof TFolder)) return [];
@@ -226,7 +226,6 @@ export class FileManager {
             const workSectionTitle = '# 当日工作代办';
             const personalSectionTitle = '# 当日个人代办';
 
-            const isIncompleteTask = (l: string) => l.trim().startsWith('- [ ]');
             const isCompletedTask = (l: string) => /^\s*- \[x\]/i.test(l.trim());
 
             for (const raw of lines) {

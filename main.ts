@@ -1,4 +1,4 @@
-import { Plugin, TFile,Menu,MarkdownView,Editor,Notice } from 'obsidian';
+import { Plugin, TFile,Menu,MarkdownView,Editor,Notice, WorkspaceLeaf } from 'obsidian';
 import { WorkflowPluginSettings, SettingsManager } from './service/settings';
 import { FileManager } from './utils/fileManager';
 import { DateUtils } from './utils/dateUtils';
@@ -31,7 +31,7 @@ export default class WorkflowPlugin extends Plugin {
 
         // 检查是否需要自动创建日记
         if (this.settings.autoCreate) {
-            this.checkAndCreateDailyNote();
+            await this.checkAndCreateDailyNote();
         }
     }
 
@@ -47,7 +47,7 @@ export default class WorkflowPlugin extends Plugin {
             id: 'create-daily-note',
             name: '创建/打开今日日记',
             callback: () => {
-                this.createOrOpenDailyNote();
+                void this.createOrOpenDailyNote();
             }
         });
 
@@ -56,7 +56,7 @@ export default class WorkflowPlugin extends Plugin {
             id: 'create-weekly-note',
             name: '创建/打开本周周记',
             callback: () => {
-                this.createOrOpenWeeklyNote();
+                void this.createOrOpenWeeklyNote();
             }
         });
 
@@ -69,7 +69,7 @@ export default class WorkflowPlugin extends Plugin {
                 const leaf = this.app.workspace.getLeaf();
                 if (leaf) {
                     if (!checking) {
-                        this.createProjectNote();
+                        void this.createProjectNote();
                     }
                     return true;
                 }
@@ -86,7 +86,7 @@ export default class WorkflowPlugin extends Plugin {
                 const leaf = this.app.workspace.getLeaf();
                 if (leaf) {
                     if (!checking) {
-                        this.createMeetingNote();
+                        void this.createMeetingNote();
                     }
                     return true;
                 }
@@ -97,14 +97,14 @@ export default class WorkflowPlugin extends Plugin {
     // 初始化Ribbon按钮
     initRabbotnIcon(){
         this.addRibbonIcon(AddDailyIcon, '打开今日日记', () => {
-            this.createOrOpenDailyNote();
+            void this.createOrOpenDailyNote();
         });
         this.addRibbonIcon(AddProjectIcon, '创建项目', () => {
-            this.createProjectNote();
+            void this.createProjectNote();
         });
         // 添加会议内容Ribbon按钮
         this.addRibbonIcon(AddMettingIcon, '创建会议记录', () => {
-            this.createMeetingNote();
+            void this.createMeetingNote();
         });
     }
     // 初始化右键菜单选项
@@ -222,7 +222,7 @@ export default class WorkflowPlugin extends Plugin {
                 const indexFilePath = `${folderPath}/${folderName}-index.md`;
                 const indexFile = this.app.vault.getAbstractFileByPath(indexFilePath);
                 if (indexFile instanceof TFile) {
-                    this.app.workspace.getLeaf(false).openFile(indexFile, { active: false });
+                    void this.app.workspace.getLeaf(false).openFile(indexFile, { active: false });
                     event.preventDefault();
                     event.stopPropagation();
                     
@@ -288,7 +288,7 @@ export default class WorkflowPlugin extends Plugin {
         }
     }
 
-    findLeafByPath(path: string): any {
+    findLeafByPath(path: string): WorkspaceLeaf | null {
         return this.app.workspace.getLeavesOfType('markdown').find(leaf => {
             // 方法 1: 尝试通过 view.file 获取（旧版本 API）
             if (leaf.view instanceof MarkdownView) {
@@ -313,7 +313,7 @@ export default class WorkflowPlugin extends Plugin {
         const weekNumber = this.dateUtils.getWeekNumber(date);
         const weekday = this.dateUtils.getWeekdayName(date);
         // 查找最近一天（非今日）的日记文件，并提取未完成任务与记录（保持原顺序）
-        const latestDailyFile = await this.fileManager.getLatestDailyFileBefore(date);
+        const latestDailyFile = this.fileManager.getLatestDailyFileBefore(date);
         let workContent: string[] = [];
         let personalContent: string[] = [];
         if (latestDailyFile) {
@@ -448,7 +448,7 @@ export default class WorkflowPlugin extends Plugin {
         let selectedProject: string | null = null;
         if (!meetingName) {
             // 弹出会议记录创建弹窗（包含项目选择）
-            const projects = (await this.fileManager.listProjects()).map(p => p.name);
+        const projects = this.fileManager.listProjects().map(p => p.name);
             const modalResult = await new Promise<{ name: string; project: string | null } | null>(resolve => {
                 const modal = new MeetingModal(this.app, projects, resolve);
                 modal.open();

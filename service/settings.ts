@@ -50,7 +50,7 @@ tags:
 `,
     projectTemplate: `---
 aliases: 
-  - {{project_name}}
+  - "{{project_name}}"
 tags:
   - project
 date: "{{date}}"
