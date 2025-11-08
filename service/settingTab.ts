@@ -8,6 +8,7 @@ export class WorkflowSettingTab extends PluginSettingTab {
     private settings: WorkflowPluginSettings;
     private saveSettings: (settings: WorkflowPluginSettings) => Promise<void>;
     private resetDefaultSettings: () => Promise<void>;
+    private applyLocalizedTemplates: () => Promise<void>;
     private plugin: WorkflowPlugin;
     constructor(
         app: App, 
@@ -20,6 +21,8 @@ export class WorkflowSettingTab extends PluginSettingTab {
         this.settings = plugin.settings; // 从插件实例获取 settings
         this.saveSettings = saveSettings;
         this.resetDefaultSettings = resetDefaultSettings;
+        // 直接从插件的 SettingsManager 暴露方法
+        this.applyLocalizedTemplates = () => this.plugin["settingsManager"]["applyLocalizedTemplates"]();
     }
 
     display(): void {
@@ -102,6 +105,20 @@ export class WorkflowSettingTab extends PluginSettingTab {
                 }).open();
             })
         );
+
+        // 应用当前语言默认模板（不影响其他设置）
+        new Setting(containerEl)
+          .setName(t('field.applyLocalizedTemplates.name', lang))
+          .setDesc(t('field.applyLocalizedTemplates.desc', lang))
+          .addButton(button => button
+            .setButtonText(t('field.applyLocalizedTemplates.button', lang))
+            .onClick(() => {
+              void this.applyLocalizedTemplates().then(() => {
+                this.settings = this.plugin.settings;
+                this.display();
+              });
+            })
+          );
         // 模板设置
         new Setting(containerEl).setName(t('section.dailyTemplate', lang)).setHeading();
         new Setting(containerEl)

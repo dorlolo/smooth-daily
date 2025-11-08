@@ -35,6 +35,11 @@ const en: Dict = {
   'field.reset.desc': 'Restore all settings to initial values',
   'field.reset.button': 'Reset to defaults',
 
+  // apply localized templates
+  'field.applyLocalizedTemplates.name': 'Apply localized templates',
+  'field.applyLocalizedTemplates.desc': 'Replace note templates with current language defaults',
+  'field.applyLocalizedTemplates.button': 'Apply localized templates',
+
   // placeholders
   'placeholder.dailyFolder': 'Workflow/daily',
   'placeholder.weeklyFolder': 'Workflow/weekly',
@@ -110,6 +115,11 @@ const zh: Dict = {
   'field.reset.name': '恢复默认设置',
   'field.reset.desc': '将所有设置恢复为初始值',
   'field.reset.button': '恢复默认',
+
+  // apply localized templates
+  'field.applyLocalizedTemplates.name': '应用当前语言默认模板',
+  'field.applyLocalizedTemplates.desc': '只替换四个模板为当前语言默认值，不影响其他设置',
+  'field.applyLocalizedTemplates.button': '应用语言默认模板',
 
   // placeholders
   'placeholder.dailyFolder': '工作流/日记',

@@ -200,4 +200,14 @@ export class SettingsManager {
       this.plugin.settings = { ...DEFAULT_SETTINGS, ...localized };
       await this.plugin.saveData(this.plugin.settings);
     }
+
+    async applyLocalizedTemplates(): Promise<void> {
+      const locale = getSystemLocale(this.plugin);
+      const localized = locale === 'zh' ? zhTemplates() : enTemplates();
+      this.plugin.settings.dailyTemplate = localized.dailyTemplate;
+      this.plugin.settings.weeklyTemplate = localized.weeklyTemplate;
+      this.plugin.settings.projectTemplate = localized.projectTemplate;
+      this.plugin.settings.meetingTemplate = localized.meetingTemplate;
+      await this.plugin.saveData(this.plugin.settings);
+    }
 }
