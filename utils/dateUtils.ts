@@ -1,7 +1,7 @@
-import { WorkflowPluginSettings } from '../service/settings';
+import { type Locale } from './i18n';
 
 export class DateUtils {
-    constructor(private settings: WorkflowPluginSettings) {}
+    constructor(private getLang: () => Locale) {}
 
     getFormattedDate(date: Date): string {
         const year = date.getFullYear();
@@ -13,8 +13,9 @@ export class DateUtils {
     }
 
     getWeekdayName(date: Date): string {
-        const weekdays = this.settings.language === 'zh' 
-            ? ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'] 
+        const lang = this.getLang();
+        const weekdays = lang === 'zh'
+            ? ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六']
             : ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
         return weekdays[date.getDay()];
     }

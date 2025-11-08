@@ -2,6 +2,7 @@ import { App,  PluginSettingTab, Setting } from 'obsidian';
 import { WorkflowPluginSettings } from './settings';
 import WorkflowPlugin from '../main'; // 引入插件主类
 import { ConfirmModal } from '../utils/modal';
+import { t, type Locale } from '../utils/i18n';
 
 export class WorkflowSettingTab extends PluginSettingTab {
     private settings: WorkflowPluginSettings;
@@ -23,16 +24,18 @@ export class WorkflowSettingTab extends PluginSettingTab {
 
     display(): void {
         const {containerEl} = this;
+        // 跟随 Obsidian 的语言设置
+        const lang: Locale = this.plugin.getLang();
 
         containerEl.empty();
-        new Setting(containerEl).setName('每日笔记参数设置').setHeading();
+        new Setting(containerEl).setName(t('title.dailyNotes', lang)).setHeading();
 
         // 文件夹设置
         new Setting(containerEl)
-            .setName('日记文件夹路径')
-            .setDesc('日记文件的存储位置')
+            .setName(t('field.dailyFolder.name', lang))
+            .setDesc(t('field.dailyFolder.desc', lang))
             .addText(text => text
-                .setPlaceholder('workFlow/daily')
+                .setPlaceholder(t('placeholder.dailyFolder', lang))
                 .setValue(this.settings.dailyFolder)
                 .onChange((value) => {
                     this.settings.dailyFolder = value;
@@ -40,10 +43,10 @@ export class WorkflowSettingTab extends PluginSettingTab {
                 }));
 
         new Setting(containerEl)
-            .setName('周记文件夹路径')
-            .setDesc('周记文件的存储位置')
+            .setName(t('field.weeklyFolder.name', lang))
+            .setDesc(t('field.weeklyFolder.desc', lang))
             .addText(text => text
-                .setPlaceholder('workFlow/weekly')
+                .setPlaceholder(t('placeholder.weeklyFolder', lang))
                 .setValue(this.settings.weeklyFolder)
                 .onChange((value) => {
                     this.settings.weeklyFolder = value;
@@ -51,10 +54,10 @@ export class WorkflowSettingTab extends PluginSettingTab {
                 }));
 
         new Setting(containerEl)
-            .setName('项目文件夹路径')
-            .setDesc('项目文件的存储位置')
+            .setName(t('field.projectFolder.name', lang))
+            .setDesc(t('field.projectFolder.desc', lang))
             .addText(text => text
-                .setPlaceholder('workFlow/projects')
+                .setPlaceholder(t('placeholder.projectFolder', lang))
                 .setValue(this.settings.projectFolder)
                 .onChange((value) => {
                     this.settings.projectFolder = value;
@@ -62,10 +65,10 @@ export class WorkflowSettingTab extends PluginSettingTab {
                 }));
 
         new Setting(containerEl)
-            .setName('会议记录文件夹路径')
-            .setDesc('会议记录文件的存储位置')
+            .setName(t('field.meetingFolder.name', lang))
+            .setDesc(t('field.meetingFolder.desc', lang))
             .addText(text => text
-                .setPlaceholder('workFlow/meetings')
+                .setPlaceholder(t('placeholder.meetingFolder', lang))
                 .setValue(this.settings.meetingFolder)
                 .onChange((value) => {
                     this.settings.meetingFolder = value;
@@ -74,8 +77,8 @@ export class WorkflowSettingTab extends PluginSettingTab {
 
         // 自动创建设置
         new Setting(containerEl)
-            .setName('自动创建日记')
-            .setDesc('每日首次启动时自动创建日记')
+            .setName(t('field.autoCreate.name', lang))
+            .setDesc(t('field.autoCreate.desc', lang))
             .addToggle(toggle => toggle
                 .setValue(this.settings.autoCreate)
                 .onChange((value) => {
@@ -83,23 +86,12 @@ export class WorkflowSettingTab extends PluginSettingTab {
                     void this.saveSettings(this.settings);
                 }));
 
-        // 语言设置
+        // 语言设置项已移除：插件语言将自动跟随 Obsidian 设置
         new Setting(containerEl)
-            .setName('语言')
-            .setDesc('插件使用的语言')
-            .addDropdown(dropdown => dropdown
-                .addOption('zh', '中文')
-                .addOption('en', '英文')
-                .setValue(this.settings.language)
-                .onChange((value) => {
-                    this.settings.language = value;
-                    void this.saveSettings(this.settings);
-                }));
-        new Setting(containerEl)
-        .setName('恢复默认设置')
-        .setDesc('将所有设置恢复为初始值')
+        .setName(t('field.reset.name', lang))
+        .setDesc(t('field.reset.desc', lang))
         .addButton(button => button
-            .setButtonText('恢复默认')
+            .setButtonText(t('field.reset.button', lang))
             .setWarning()
             .onClick(() => {
                 new ConfirmModal(this.app, () => {
@@ -111,7 +103,7 @@ export class WorkflowSettingTab extends PluginSettingTab {
             })
         );
         // 模板设置
-        new Setting(containerEl).setName('日记模板').setHeading();
+        new Setting(containerEl).setName(t('section.dailyTemplate', lang)).setHeading();
         new Setting(containerEl)
             .addTextArea(text => {
                 text
@@ -124,7 +116,7 @@ export class WorkflowSettingTab extends PluginSettingTab {
                 text.inputEl.cols = 50;
             });
 
-        new Setting(containerEl).setName('周记模板').setHeading();
+        new Setting(containerEl).setName(t('section.weeklyTemplate', lang)).setHeading();
         new Setting(containerEl)
             .addTextArea(text => {
                 text
@@ -137,7 +129,7 @@ export class WorkflowSettingTab extends PluginSettingTab {
                 text.inputEl.cols = 50;
             });
 
-        new Setting(containerEl).setName('项目模板').setHeading();
+        new Setting(containerEl).setName(t('section.projectTemplate', lang)).setHeading();
         new Setting(containerEl)
             .addTextArea(text => {
                 text
@@ -150,7 +142,7 @@ export class WorkflowSettingTab extends PluginSettingTab {
                 text.inputEl.cols = 50;
             });
 
-        new Setting(containerEl).setName('会议记录模板').setHeading();
+        new Setting(containerEl).setName(t('section.meetingTemplate', lang)).setHeading();
         new Setting(containerEl)
             .addTextArea(text => {
                 text

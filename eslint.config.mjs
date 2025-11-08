@@ -48,20 +48,11 @@ export default [
     },
   },
 
-  // Rule severity overrides (keep linting non-blocking for now)
+  // Keep only unused-vars warn; use plugin default severity for sentence-case
   {
     files: ['**/*.ts', '**/*.tsx', '**/*.js', '**/*.jsx'],
     rules: {
       '@typescript-eslint/no-unused-vars': ['warn', { args: 'none' }],
-      'obsidianmd/ui/sentence-case': 'warn',
-    },
-  },
-
-  // Disable sentence-case for Chinese UI text in settings tab
-  {
-    files: ['service/settingTab.ts'],
-    rules: {
-      'obsidianmd/ui/sentence-case': 'off',
     },
   },
 ];

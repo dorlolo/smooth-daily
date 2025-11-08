@@ -4,6 +4,7 @@ import { FileManager } from './utils/fileManager';
 import { DateUtils } from './utils/dateUtils';
 import { PromptModal, MeetingModal } from './utils/modal';
 import { WorkflowSettingTab } from './service/settingTab';
+import { t, type Locale } from './utils/i18n';
 const AddProjectIcon ="target";
 const AddMettingIcon ="microphone";
 const AddDailyIcon ="calendar";
@@ -16,12 +17,22 @@ export default class WorkflowPlugin extends Plugin {
     private dateUtils: DateUtils;
     private contextMenuListener: (menu: Menu, file: TFile) => void; // 保存文件选择事件监听器引用
     private editorMenuListener:(menu: Menu, editor: Editor, view: MarkdownView) => void;// 保存文件编辑事件监听器引用
+    // 跟随 Obsidian 配置的语言，仅支持 zh/en
+    getLang(): Locale {
+        const appObj = this.app as unknown as { i18n?: { language?: string }; vault?: { config?: { locale?: string } } };
+        const raw: string | undefined =
+            appObj?.i18n?.language ||
+            appObj?.vault?.config?.locale ||
+            (typeof window !== 'undefined' ? (window.localStorage?.getItem('language') || window.localStorage?.getItem('obsidianLanguage') || undefined) : undefined);
+        return raw && raw.toLowerCase().startsWith('zh') ? 'zh' : 'en';
+    }
     async onload() {
         // 初始化管理类
         this.settingsManager = new SettingsManager(this);
         this.settings = await this.settingsManager.loadSettings();
         this.fileManager = new FileManager(this.app, this.settings);
-        this.dateUtils = new DateUtils(this.settings);
+        // DateUtils 跟随 Obsidian 语言设置
+        this.dateUtils = new DateUtils(() => this.getLang());
 
         
         this.initRabbotnIcon()
@@ -42,10 +53,11 @@ export default class WorkflowPlugin extends Plugin {
     }
     // 初始化命令
     initCommands() {
+        const lang = this.getLang();
         // 创建当日日记 
         this.addCommand({
             id: 'create-daily-note',
-            name: '创建/打开今日日记',
+            name: t('command.createDaily.name', lang),
             callback: () => {
                 void this.createOrOpenDailyNote();
             }
@@ -54,7 +66,7 @@ export default class WorkflowPlugin extends Plugin {
         // 创建周记
         this.addCommand({
             id: 'create-weekly-note',
-            name: '创建/打开本周周记',
+            name: t('command.createWeekly.name', lang),
             callback: () => {
                 void this.createOrOpenWeeklyNote();
             }
@@ -63,7 +75,7 @@ export default class WorkflowPlugin extends Plugin {
         // 创建项目
         this.addCommand({
             id: 'create-project-note',
-            name: '创建项目',
+            name: t('command.createProject.name', lang),
             checkCallback: (checking: boolean) => {
                 // 使用 getLeaf() 替代 activeLeaf
                 const leaf = this.app.workspace.getLeaf();
@@ -80,7 +92,7 @@ export default class WorkflowPlugin extends Plugin {
         // 创建会议记录
         this.addCommand({
             id: 'create-meeting-note',
-            name: '创建会议记录',
+            name: t('command.createMeeting.name', lang),
             checkCallback: (checking: boolean) => {
                 // 使用 getLeaf() 替代 activeLeaf
                 const leaf = this.app.workspace.getLeaf();
@@ -96,14 +108,15 @@ export default class WorkflowPlugin extends Plugin {
     }
     // 初始化Ribbon按钮
     initRabbotnIcon(){
-        this.addRibbonIcon(AddDailyIcon, '打开今日日记', () => {
+        const lang = this.getLang();
+        this.addRibbonIcon(AddDailyIcon, t('ribbon.openDaily', lang), () => {
             void this.createOrOpenDailyNote();
         });
-        this.addRibbonIcon(AddProjectIcon, '创建项目', () => {
+        this.addRibbonIcon(AddProjectIcon, t('ribbon.createProject', lang), () => {
             void this.createProjectNote();
         });
         // 添加会议内容Ribbon按钮
-        this.addRibbonIcon(AddMettingIcon, '创建会议记录', () => {
+        this.addRibbonIcon(AddMettingIcon, t('ribbon.createMeeting', lang), () => {
             void this.createMeetingNote();
         });
     }
@@ -112,38 +125,39 @@ export default class WorkflowPlugin extends Plugin {
         if (!this.registerEvent){
             return;
         }
+        const lang = this.getLang();
         this.contextMenuListener =(menu, file) => {
             if (file instanceof TFile) {
                 // 在日记文件上右键创建相关项目
                 if (file.path.startsWith(this.settings.dailyFolder)) {
                     menu.addItem((item) => {
-                        item.setTitle('创建关联项目')
+                        item.setTitle(t('ctx.createRelatedProject', lang))
                             .setIcon(AddProjectIcon)
                             .onClick(async () => {
-                                const projectName = await this.promptUser('请输入项目名称', '', (name: string) => {
-                                    if (!name) return '项目名称不能为空';
+                                const projectName = await this.promptUser(t('prompt.projectName', lang), '', (name: string) => {
+                                    if (!name) return t('validate.projectName.required', lang);
                                     const folderPath = `${this.settings.projectFolder}/${name}`;
                                     const indexFilePath = `${folderPath}/${name}-index.md`;
                                     const folderExists = !!this.app.vault.getAbstractFileByPath(folderPath);
                                     const fileExists = !!this.app.vault.getAbstractFileByPath(indexFilePath);
                                     if (folderExists || fileExists) {
-                                        return '已存在同名项目（或索引文件），请更换名称';
+                                        return t('validate.projectName.exists', lang);
                                     }
                                     return null;
                                 });
-                                if (projectName) {
-                                    this.createProjectNote(projectName, file);
-                                }
+                                    if (projectName) {
+                                        await this.createProjectNote(projectName, file);
+                                    }
                             });
                     });
 
                     menu.addItem((item) => {
-                        item.setTitle('创建关联会议记录')
+                        item.setTitle(t('ctx.createRelatedMeeting', lang))
                             .setIcon(AddMettingIcon)
                             .onClick(async () => {
-                                const meetingName = await this.promptUser('请输入会议名称');
+                                const meetingName = await this.promptUser(t('prompt.meetingName', lang));
                                 if (meetingName) {
-                                    this.createMeetingNote(meetingName, file);
+                                    await this.createMeetingNote(meetingName, file);
                                 }
                             });
                     });
@@ -152,17 +166,17 @@ export default class WorkflowPlugin extends Plugin {
                 // 在项目文件上右键创建相关会议
                 if (file.path.startsWith(this.settings.projectFolder)) {
                     menu.addItem((item) => {
-                        item.setTitle('添加到每周任务')
+                        item.setTitle(t('ctx.addToWeeklyTask', lang))
                             .setIcon(AddLinkIcon)
                             .onClick(async () => {
                                 await this.addToWeeklyTask(file, '');
                             });
                     });
                     menu.addItem((item) => {
-                        item.setTitle('创建关联会议记录')
+                        item.setTitle(t('ctx.createRelatedMeeting', lang))
                             .setIcon(AddMettingIcon)
                             .onClick(async () => {
-                                const meetingName = await this.promptUser('请输入会议名称');
+                                const meetingName = await this.promptUser(t('prompt.meetingName', lang));
                                 if (meetingName) {
                                     this.createMeetingNote(meetingName, file);
                                 }
@@ -184,7 +198,7 @@ export default class WorkflowPlugin extends Plugin {
                     menu.addItem((item) => {
                         item.setTitle('添加到每周任务')
                         .setIcon(AddLinkIcon)
-                        .onClick(() => this.addToWeeklyTask(file, lineContent));
+                        .onClick(() => { void this.addToWeeklyTask(file, lineContent); });
                     });
                 }
             }
@@ -396,14 +410,15 @@ export default class WorkflowPlugin extends Plugin {
     // 创建项目笔记
     async createProjectNote(projectName?: string|null, relatedFile?: TFile) {
         if (!projectName) {
-            projectName = await this.promptUser('请输入项目名称', '', (name: string) => {
-                if (!name) return '项目名称不能为空';
+            const lang = this.getLang();
+            projectName = await this.promptUser(t('prompt.projectName', lang), '', (name: string) => {
+                if (!name) return t('validate.projectName.required', lang);
                 const folderPath = `${this.settings.projectFolder}/${name}`;
                 const indexFilePath = `${folderPath}/${name}-index.md`;
                 const folderExists = !!this.app.vault.getAbstractFileByPath(folderPath);
                 const fileExists = !!this.app.vault.getAbstractFileByPath(indexFilePath);
                 if (folderExists || fileExists) {
-                    return '已存在同名项目（或索引文件），请更换名称';
+                    return t('validate.projectName.exists', lang);
                 }
                 return null;
             });
@@ -429,10 +444,7 @@ export default class WorkflowPlugin extends Plugin {
                          .replace(/{{project_name}}/g, `${projectName}`);
         
         // 如果有相关文件，添加引用
-        if (relatedFile && relatedFile.path.startsWith(this.settings.dailyFolder)) {
-            const dailyFileName = relatedFile.name;
-            content = content.replace('相关日记文件', dailyFileName);
-        }
+        // 如需插入相关日记链接，可在模板中使用自定义占位符并在此替换
         
         // 创建文件
         const file = await this.app.vault.create(filePath, content);
@@ -503,9 +515,10 @@ export default class WorkflowPlugin extends Plugin {
             if (projectIndex) {
                 const linkText = this.app.metadataCache.fileToLinktext(file, '');
                 const linkLine = `- [[${linkText}]]`;
-                await this.fileManager.appendLineUnderHeading(projectIndex, '## 会议记录', linkLine);
+                await this.fileManager.appendLineUnderHeading(projectIndex, t('heading.project.meetingNotes', this.getLang()), linkLine);
             } else {
-                new Notice(`未找到项目“${selectedProject}”的索引文件，已跳过追加会议链接。`);
+                const msg = t('notice.projectIndexMissing', this.getLang()).replace('{{project}}', selectedProject);
+                new Notice(msg);
             }
         }
 

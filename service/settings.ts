@@ -12,16 +12,10 @@ export interface WorkflowPluginSettings {
     projectTemplate: string;
     meetingTemplate: string;
 }
+import type { Locale } from '../utils/i18n';
 
-export const DEFAULT_SETTINGS: WorkflowPluginSettings = {
-    dailyFolder: 'workFlow/daily',
-    weeklyFolder: 'workFlow/weekly',
-    projectFolder: 'workFlow/projects',
-    meetingFolder: 'workFlow/meetings',
-    autoCreate: true,
-    autoCreateTime: '00:00',
-    dateFormat: 'YYYY-MM-DD',
-    language: 'zh',
+function zhTemplates() {
+  return {
     dailyTemplate: `---
 tags:
   - daily
@@ -89,6 +83,98 @@ links: {{relatedFile}}
 ## 会议决议
 
 `
+  };
+}
+
+function enTemplates() {
+  return {
+    dailyTemplate: `---
+tags:
+  - daily
+  - {{date_year}}-W{{week}}
+date: "{{date}}"
+week: "W{{week}}"
+weekDay: "{{weekday}}"
+---
+
+# Weekly tasks
+![[workFlow/weekly/{{date_year}}-w{{week}}#Main tasks]]
+
+# Work todos today
+{{incomplete_work}}
+
+# Personal todos today
+{{incomplete_personal}} `,
+    weeklyTemplate: `---
+tags:
+  - weekly
+  - {{date_year}}-{{date_month}}
+  - W{{week}}
+---
+
+# Main tasks
+`,
+    projectTemplate: `---
+aliases: 
+  - "{{project_name}}"
+tags:
+  - project
+date: "{{date}}"
+status: active
+---
+
+## Project references
+
+
+## Main tasks
+
+
+## Related files
+
+
+## Meeting notes
+
+`,
+    meetingTemplate: `---
+tags:
+  - meeting
+date: "{{date}}"
+time: "{{time}}"
+links: {{relatedFile}}
+---
+
+# {{meeting_name}}
+
+## Meeting goals
+
+
+## Discussion
+1. 
+2. 
+
+## Decisions
+
+`
+  };
+}
+
+function getSystemLocale(plugin: import('../main').default): Locale {
+  const appObj = plugin.app as unknown as { i18n?: { language?: string }; vault?: { config?: { locale?: string } } };
+  const raw: string | undefined = appObj?.i18n?.language || appObj?.vault?.config?.locale || (typeof window !== 'undefined' ? (window.localStorage?.getItem('language') || window.localStorage?.getItem('obsidianLanguage') || undefined) : undefined);
+  return raw && raw.toLowerCase().startsWith('zh') ? 'zh' : 'en';
+}
+
+export const DEFAULT_SETTINGS: WorkflowPluginSettings = {
+    dailyFolder: 'workFlow/daily',
+    weeklyFolder: 'workFlow/weekly',
+    projectFolder: 'workFlow/projects',
+    meetingFolder: 'workFlow/meetings',
+    autoCreate: true,
+    autoCreateTime: '00:00',
+    dateFormat: 'YYYY-MM-DD',
+    language: 'zh',
+    // 默认使用中文模板；实际加载与重置时按系统语言覆盖
+    ...zhTemplates()
 };
 
 import WorkflowPlugin from '../main'; // 引入你的插件主类
@@ -97,7 +183,11 @@ export class SettingsManager {
     constructor(private plugin: WorkflowPlugin) {} // 指定为你的自定义插件类型
 
     async loadSettings(): Promise<WorkflowPluginSettings> {
-        return Object.assign({}, DEFAULT_SETTINGS, await this.plugin.loadData());
+        const stored = await this.plugin.loadData();
+        const locale = getSystemLocale(this.plugin);
+        const localized = locale === 'zh' ? zhTemplates() : enTemplates();
+        // 合并：语言字段保留（为兼容旧数据），模板按系统语言默认值填充
+        return Object.assign({}, DEFAULT_SETTINGS, localized, stored);
     }
 
     async saveSettings(settings: WorkflowPluginSettings): Promise<void> {
@@ -105,7 +195,9 @@ export class SettingsManager {
     }
     
     async resetToDefaults(): Promise<void> {
-      this.plugin.settings = {...DEFAULT_SETTINGS}; // 现在 TypeScript 知道 settings 属性存在
+      const locale = getSystemLocale(this.plugin);
+      const localized = locale === 'zh' ? zhTemplates() : enTemplates();
+      this.plugin.settings = { ...DEFAULT_SETTINGS, ...localized };
       await this.plugin.saveData(this.plugin.settings);
     }
 }

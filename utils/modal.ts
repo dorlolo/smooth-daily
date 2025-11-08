@@ -1,4 +1,11 @@
 import { Modal, App, Notice } from 'obsidian';
+import { t, type Locale } from './i18n';
+
+function getLangFromApp(app: App): Locale {
+  const appObj = app as unknown as { i18n?: { language?: string }; vault?: { config?: { locale?: string } } };
+  const raw: string | undefined = appObj?.i18n?.language || appObj?.vault?.config?.locale || (typeof window !== 'undefined' ? (window.localStorage?.getItem('language') || window.localStorage?.getItem('obsidianLanguage') || undefined) : undefined);
+  return raw && raw.toLowerCase().startsWith('zh') ? 'zh' : 'en';
+}
 
 export class PromptModal extends Modal {
   private input: HTMLInputElement;
@@ -53,12 +60,13 @@ export class PromptModal extends Modal {
     
     // 创建按钮区域
     const footerContainer = contentEl.createDiv({cls:'sd-modal-footer-container'});    
-    const cancelBtn = footerContainer.createEl('button',{text:'取消',cls:'sd-modal-cancel-btn'});
+    const lang = getLangFromApp(this.app);
+    const cancelBtn = footerContainer.createEl('button',{text: t('common.cancel', lang),cls:'sd-modal-cancel-btn'});
     cancelBtn.onclick = () => {
       this.resolve(null);
       this.close();
     };
-    const confirmBtn = footerContainer.createEl('button',{text:'确定',cls:'sd-modal-confirm-btn'});
+    const confirmBtn = footerContainer.createEl('button',{text: t('common.confirm', lang),cls:'sd-modal-confirm-btn'});
 
     confirmBtn.onclick = () => this.submit();
     this.input.focus();
@@ -72,7 +80,8 @@ export class PromptModal extends Modal {
   private submit() {
     const value = this.input.value.trim();
     if (!value) {
-      new Notice('输入不能为空');
+      const lang = getLangFromApp(this.app);
+      new Notice(t('validate.input.required', lang));
       return;
     }
     if (this.validate) {
@@ -108,19 +117,20 @@ export class MeetingModal extends Modal {
 
   onOpen() {
     const { contentEl, titleEl } = this;
-    titleEl.setText('创建会议记录');
+    const lang = getLangFromApp(this.app);
+    titleEl.setText(t('modal.meeting.title', lang));
     contentEl.empty();
 
     const container = contentEl.createDiv({ cls: 'sd-modal-content-container' });
 
     // 会议名称
     this.nameInput = container.createEl('input', { type: 'text', cls: 'sd-modal-input' });
-    this.nameInput.placeholder = '请输入会议名称';
+    this.nameInput.placeholder = t('prompt.meetingName', lang);
     this.hintEl = container.createDiv({ cls: 'sd-modal-hint' });
 
     // 项目选择（可为空，提供清除按钮）
     const selectLabel = container.createDiv({ cls: 'sd-modal-select-label' });
-    selectLabel.setText('关联项目（可留空）：');
+    selectLabel.setText(t('modal.meeting.associateProject', lang));
     const selectRow = container.createDiv({ cls: 'sd-modal-select-row' });
     this.projectSelect = selectRow.createEl('select', { cls: 'sd-modal-select' });
     this.projects.forEach(p => {
@@ -129,7 +139,7 @@ export class MeetingModal extends Modal {
     // 默认不选中任何项目
     this.projectSelect.selectedIndex = -1;
     const clearBtn = selectRow.createEl('button', { text: '✕', cls: 'sd-modal-select-clear-btn hidden' });
-    clearBtn.setAttr('title', '清除选择');
+    clearBtn.setAttr('title', t('modal.meeting.clearSelection', lang));
     clearBtn.onclick = () => {
       this.projectSelect.selectedIndex = -1;
       clearBtn.addClass('hidden');
@@ -143,9 +153,9 @@ export class MeetingModal extends Modal {
     });
 
     const footer = contentEl.createDiv({ cls: 'sd-modal-footer-container' });
-    const cancelBtn = footer.createEl('button', { text: '取消', cls: 'sd-modal-cancel-btn' });
+    const cancelBtn = footer.createEl('button', { text: t('common.cancel', lang), cls: 'sd-modal-cancel-btn' });
     cancelBtn.onclick = () => { this.resolve(null); this.close(); };
-    const confirmBtn = footer.createEl('button', { text: '确定', cls: 'sd-modal-confirm-btn' });
+    const confirmBtn = footer.createEl('button', { text: t('common.confirm', lang), cls: 'sd-modal-confirm-btn' });
     confirmBtn.onclick = () => this.submit();
 
     this.nameInput.addEventListener('keydown', (ev) => {
@@ -157,7 +167,8 @@ export class MeetingModal extends Modal {
   private submit() {
     const name = this.nameInput.value.trim();
     if (!name) {
-      this.hintEl.setText('会议名称不能为空');
+      const lang = getLangFromApp(this.app);
+      this.hintEl.setText(t('validate.meetingName.required', lang));
       this.hintEl.addClass('error');
       this.nameInput.addClass('error');
       return;
@@ -175,18 +186,19 @@ export class ConfirmModal extends Modal {
 
   onOpen() {
       const {contentEl} = this;
-      contentEl.setText('确定要恢复所有设置为默认值吗？');
+      const lang = getLangFromApp(this.app);
+      contentEl.setText(t('modal.reset.confirmText', lang));
       
       // 创建按钮容器
       const buttonContainer = contentEl.createDiv({cls: 'modal-button-container'});
       
       // 创建取消按钮
-      buttonContainer.createEl('button', {text: '取消'}).onclick = () => {
+      buttonContainer.createEl('button', {text: t('common.cancel', lang)}).onclick = () => {
           this.close();
       };
       
       // 创建确认按钮
-      buttonContainer.createEl('button', {text: '确认', cls: 'mod-cta'}).onclick = () => {
+      buttonContainer.createEl('button', {text: t('common.confirm', lang), cls: 'mod-cta'}).onclick = () => {
           this.onConfirm();
           this.close();
       };
