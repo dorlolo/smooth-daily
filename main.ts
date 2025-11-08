@@ -178,7 +178,7 @@ export default class WorkflowPlugin extends Plugin {
                             .onClick(async () => {
                                 const meetingName = await this.promptUser(t('prompt.meetingName', lang));
                                 if (meetingName) {
-                                    this.createMeetingNote(meetingName, file);
+                                    await this.createMeetingNote(meetingName, file);
                                 }
                             });
                     });
