@@ -226,29 +226,51 @@ export class FileManager {
             const workSectionTitle = '# 当日工作代办';
             const personalSectionTitle = '# 当日个人代办';
 
-            const isCompletedTask = (l: string) => /^\s*- \[x\]/i.test(l.trim());
+            const isCompletedTask = (l: string) => /^\s*-\s*\[x\]/i.test(l.trim());
+            const isAnyTask = (l: string) => /^\s*-\s*\[[ xX]\]/.test(l.trim());
+            // 当遇到已完成任务后，忽略其下方的内容，直到遇到下一个任务（完成或未完成）
+            let skippingCompletedBlock = false;
 
             for (const raw of lines) {
                 const line = raw; // 保留原格式（包含空行、缩进）
                 const trimmed = raw.trim();
 
-                if (trimmed === workSectionTitle) { currentSection = 'work'; continue; }
-                if (trimmed === personalSectionTitle) { currentSection = 'personal'; continue; }
+                if (trimmed === workSectionTitle) { currentSection = 'work'; skippingCompletedBlock = false; continue; }
+                if (trimmed === personalSectionTitle) { currentSection = 'personal'; skippingCompletedBlock = false; continue; }
 
                 // 遇到新的标题则结束当前段落
-                if (trimmed.startsWith('# ')) { currentSection = ''; continue; }
+                if (trimmed.startsWith('# ')) { currentSection = ''; skippingCompletedBlock = false; continue; }
 
                 if (!currentSection) continue;
 
-                // 过滤掉已完成任务，其余（未完成任务或普通记录）保留
-                if (isCompletedTask(line)) {
-                    continue;
+                // 任务块处理：
+                // 1) 遇到已完成任务：跳过该任务，并开启跳过模式，直到遇到下一个任务
+                // 2) 遇到未完成任务：收集该任务，关闭跳过模式
+                // 3) 普通记录：仅在未处于跳过模式时收集（意味着它属于最近的未完成任务块或段落内的说明）
+                if (isAnyTask(line)) {
+                    if (isCompletedTask(line)) {
+                        // 完成任务：跳过该任务与其下方的记录，直到下一个任务
+                        skippingCompletedBlock = true;
+                        continue;
+                    } else {
+                        // 未完成任务：收集，并允许后续记录进入
+                        skippingCompletedBlock = false;
+                        if (currentSection === 'work') {
+                            work.push(line);
+                        } else if (currentSection === 'personal') {
+                            personal.push(line);
+                        }
+                        continue;
+                    }
                 }
 
-                if (currentSection === 'work') {
-                    work.push(line);
-                } else if (currentSection === 'personal') {
-                    personal.push(line);
+                // 非任务行
+                if (!skippingCompletedBlock) {
+                    if (currentSection === 'work') {
+                        work.push(line);
+                    } else if (currentSection === 'personal') {
+                        personal.push(line);
+                    }
                 }
             }
 
