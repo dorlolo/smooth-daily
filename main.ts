@@ -504,7 +504,8 @@ export default class WorkflowPlugin extends Plugin {
         }
         
         // 确保在 frontmatter 中包含 aliases: ["meetingName"]
-        const ensureAlias = (src: string, alias: string): string => {
+        const ensureAlias = (src: string, alias?: string): string => {
+            if (!alias || !alias.trim()) return src;
             const lines = src.split('\n');
             const start = lines.findIndex(l => l.trim() === '---');
             if (start === -1) {
@@ -532,7 +533,7 @@ export default class WorkflowPlugin extends Plugin {
             }
             return lines.join('\n');
         };
-        content = ensureAlias(content, meetingName);
+        content = ensureAlias(content, meetingName ?? undefined);
 
         // 创建文件
         const file = await this.app.vault.create(filePath, content);
