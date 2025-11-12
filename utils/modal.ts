@@ -1,4 +1,4 @@
-import { Modal, App, Notice } from 'obsidian';
+import { Modal, App } from 'obsidian';
 import { t, type Locale } from './i18n';
 
 function getLangFromApp(app: App): Locale {
@@ -49,8 +49,7 @@ export class PromptModal extends Modal {
       }
     };
     this.input.addEventListener('input', updateHint);
-    // 初始更新一次提示
-    updateHint();
+    // 不在初始展示错误提示，用户输入后再触发校验
     this.input.addEventListener('keydown', (event) => {
         if (event.key === 'Enter') {
             event.preventDefault();
@@ -81,7 +80,10 @@ export class PromptModal extends Modal {
     const value = this.input.value.trim();
     if (!value) {
       const lang = getLangFromApp(this.app);
-      new Notice(t('validate.input.required', lang));
+      // 展示错误态与提示文字（红色），仅在确认时触发
+      this.hintEl.setText(t('validate.input.required', lang));
+      this.hintEl.addClass('error');
+      this.input.addClass('error');
       return;
     }
     if (this.validate) {
