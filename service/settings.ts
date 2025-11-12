@@ -66,6 +66,8 @@ status: active
     meetingTemplate: `---
 tags:
   - meeting
+aliases:
+  - "{{meeting_name}}"
 date: "{{date}}"
 time: "{{time}}"
 links: {{relatedFile}}
@@ -138,6 +140,8 @@ status: active
     meetingTemplate: `---
 tags:
   - meeting
+aliases:
+  - "{{meeting_name}}"
 date: "{{date}}"
 time: "{{time}}"
 links: {{relatedFile}}
