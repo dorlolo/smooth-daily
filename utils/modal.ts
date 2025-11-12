@@ -161,6 +161,14 @@ export class MeetingModal extends Modal {
     this.nameInput.addEventListener('keydown', (ev) => {
       if (ev.key === 'Enter') { ev.preventDefault(); this.submit(); }
     });
+    // 在输入时移除错误态并清空提示
+    this.nameInput.addEventListener('input', () => {
+      if (this.nameInput.value.trim().length > 0) {
+        this.hintEl.setText('');
+        this.hintEl.removeClass('error');
+        this.nameInput.removeClass('error');
+      }
+    });
     this.nameInput.focus();
   }
 

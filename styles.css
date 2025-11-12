@@ -24,12 +24,33 @@ If your plugin does not need CSS, delete this file.
     font-size: 18px!important;
     color: var(--text-normal)!important;
     height: 40px!important;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
 .sd-modal-input:focus {
     border: 1px solid var(--background-modifier-border)!important;
     border-color: var(--interactive-accent)!important;
     box-shadow: 0 0 0 2px var(--interactive-accent)!important;
+}
+
+/* 提示文本样式及错误态 */
+.sd-modal-hint {
+    margin-top: 8px;
+    color: var(--text-muted);
+    font-size: 13px;
+}
+.sd-modal-hint.error {
+    color: #e25555; /* 红色告警 */
+}
+
+/* 输入框错误态：红色边框与阴影 */
+.sd-modal-input.error {
+    border-color: #e25555 !important;
+    box-shadow: 0 0 0 2px rgba(226, 85, 85, 0.3) !important;
+}
+.sd-modal-input.error:focus {
+    border-color: #e25555 !important;
+    box-shadow: 0 0 0 2px rgba(226, 85, 85, 0.4) !important;
 }
 .sd-modal-cancel-btn{
     padding: 0 20px;
